@@ -1,36 +1,23 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis, LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score
-from tqdm import tqdm
+#from tqdm import tqdm
 from tqdm import tqdm_notebook
-from sklearn.covariance import EmpiricalCovariance
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-import sympy 
 import matplotlib.pyplot as plt
 from sklearn.covariance import GraphicalLasso
 from sklearn.mixture import GaussianMixture
-import scipy
-from sklearn.neighbors import KNeighborsClassifier
-from itertools import combinations
-from sklearn.cluster import KMeans
-from sklearn.svm import NuSVC
-from sklearn import svm, neighbors, linear_model, neural_network
-from sklearn.covariance import EmpiricalCovariance
+from sklearn import linear_model
 from sklearn.pipeline import Pipeline
 import warnings
 
-import multiprocessing
-from itertools import combinations
-from scipy.optimize import minimize  
 
 import subprocess
 import re
-import sys
 import glob
 import ctypes
 
@@ -48,7 +35,7 @@ _OPENBLAS_ = 'openblas'
 class BLAS:
     def __init__(self, cdll, kind):
         if kind not in (_MKL_, _OPENBLAS_):
-            raise ValueError(f'kind must be {MKL} or {OPENBLAS}, got {kind} instead.')
+            raise ValueError(f'kind must be {_MKL_} or {_OPENBLAS_}, got {kind} instead.')
         
         self.kind = kind
         self.cdll = cdll
@@ -243,8 +230,6 @@ def GMM_prediction(train, test, target_magic=None, seed=42, trained_parameter_fi
     # INITIALIZE VARIABLES
     cols = [c for c in train.columns if c not in ['id', 'target']]
     cols.remove('wheezy-copper-turtle-magic')
-    oof = np.zeros(len(train))
-    preds = np.zeros(len(test))
 
     
     # BUILD 512 SEPARATE MODELS
@@ -270,8 +255,6 @@ def GMM_prediction(train, test, target_magic=None, seed=42, trained_parameter_fi
         
         for r in range(random_seed_num):
             # Initialize
-#             oof = np.zeros(len(train))
-#             preds = np.zeros(len(test))
 
             # STRATIFIED K-FOLD
             skf = StratifiedKFold(n_splits=11, random_state=seed+r, shuffle=True)
@@ -304,6 +287,8 @@ def GMM_prediction(train, test, target_magic=None, seed=42, trained_parameter_fi
                 gm = GaussianMixture(random_state=seed, n_components=2*k, init_params='random', covariance_type='full', tol=0.001,reg_covar=0.001, max_iter=100, n_init=1,means_init=ms, precisions_init=ps)
                 gm.fit(np.concatenate([train3[train_index,:], test3, train3[test_index, :]],axis = 0))
                 
+                # GMM_array[r][0]: oof
+                # GMM_array[r][1]: preds
                 GMM_array[r][0][idx1[test_index]] += np.sum(gm.predict_proba(train3[test_index,:])[:,k:], axis=1) 
                 GMM_array[r][1][idx2] += np.sum(gm.predict_proba(test3)[:,k:], axis=1) / skf.n_splits
 #                 oof[idx1[test_index]] += np.sum(gm.predict_proba(train3[test_index,:])[:,k:], axis=1) #/ random_seed_num
